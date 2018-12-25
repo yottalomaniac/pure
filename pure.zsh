@@ -99,7 +99,7 @@ prompt_pure_preexec() {
 	typeset -g prompt_pure_cmd_timestamp=$EPOCHSECONDS
 
 	# shows the current dir and executed command in the title while a process is active
-	prompt_pure_set_title 'ignore-escape' "$PWD:t: $2"
+	# prompt_pure_set_title 'ignore-escape' "$PWD:t: $2"
 
 	# Disallow python virtualenv from updating the prompt, set it to 12 if
 	# untouched by the user to indicate that Pure modified it. Here we use
@@ -112,38 +112,26 @@ prompt_pure_preprompt_render() {
 
 	# Set color for git branch/dirty status, change color if dirty checking has
 	# been delayed.
-	local git_color=cyan
+	local git_color=red
 	[[ -n ${prompt_pure_git_last_dirty_check_timestamp+x} ]] && git_color=red
 
 	# Initialize the preprompt array.
-	local -a preprompt_parts
+	local -a prerprompt_parts
 
-	# Username and machine, if applicable.
-	[[ -n $prompt_pure_state[username] ]] && preprompt_parts+=('${prompt_pure_state[username]}')
-
-	# Set the path, colored by ownership/permissions
-	if (( $(stat -c "%u" . ) == UID )); then
-		preprompt_parts+=('%F{blue}%2~%f')
-	elif [[ -w . ]]; then
-		preprompt_parts+=('%F{yellow}%2~%f')
-	else
-		preprompt_parts+=('%F{magenta}%2~%f')
-	fi
+	# Execution time.
+	[[ -n $prompt_pure_cmd_exec_time ]] && prerprompt_parts+=('%F{yellow}${prompt_pure_cmd_exec_time}%f')
 
 	# Add git branch, dirty status, and push/pull info.
 	typeset -gA prompt_pure_vcs_info
 	if [[ -n $prompt_pure_vcs_info[branch] ]]; then
-		preprompt_parts+=("%F{$git_color}"'${prompt_pure_vcs_info[branch]}${prompt_pure_git_dirty}%F{cyan}${prompt_pure_git_status}%f')
+		prerprompt_parts+=("%F{$git_color}"'${prompt_pure_vcs_info[branch]}${prompt_pure_git_dirty}%F{cyan}${prompt_pure_git_status}%f')
 	fi
-
-	# Execution time.
-	[[ -n $prompt_pure_cmd_exec_time ]] && preprompt_parts+=('%F{yellow}${prompt_pure_cmd_exec_time}%f')
 
 	local -H MATCH MBEGIN MEND
 	unset MATCH MBEGIN MEND
 
 	# Construct the new prompt with a clean preprompt.
-	PROMPT="${(j. .)preprompt_parts} "  # Join parts, space separated.
+	RPROMPT="${(j. .)prerprompt_parts}"
 
 	# Expand the prompt for future comparision.
 	local expanded_prompt
@@ -165,7 +153,7 @@ prompt_pure_precmd() {
 	unset prompt_pure_cmd_timestamp
 
 	# shows the full path in the title
-	prompt_pure_set_title 'expand-prompt' '%2~'
+	# prompt_pure_set_title 'expand-prompt' '%2~'
 
 	# preform async git dirty check and fetch
 	prompt_pure_async_tasks
